@@ -1,4 +1,7 @@
 import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const sequelize = new Sequelize(process.env.POSTGRES_URI, {
   dialect: 'postgres',
@@ -10,9 +13,9 @@ const connectPostgres = async () => {
     await sequelize.authenticate();
     console.log('PostgreSQL connected');
   } catch (error) {
-    console.error('Postgres connection error:', error);
+    console.error(' PostgreSQL connection error:', error);
   }
 };
 
-export { sequelize };
+export { sequelize }; 
 export default connectPostgres;

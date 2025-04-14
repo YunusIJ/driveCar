@@ -38,7 +38,7 @@ app.use(passport.session());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
-app.use('/api/payment', paymentRoutes);
+//app.use('/api/payment', paymentRoutes);
 
 // Database connections
 await connectMongoDB();
@@ -46,4 +46,4 @@ await connectPostgres();
 
 // Server start
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚗 DriveCar server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(` DriveCar server running on http://localhost:${PORT}`));

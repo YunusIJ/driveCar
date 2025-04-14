@@ -1,6 +1,6 @@
 import passport from 'passport';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
-import User from '../models/User.js';
+import User from '../models/auth.model.js';
 
 passport.serializeUser((user, done) => {
   done(null, user.id);

@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { sequelize } from '../config/db.postgres.js';
+import { sequelize } from '../config/postgress.js';
 
 const Car = sequelize.define('Car', {
   model: {
