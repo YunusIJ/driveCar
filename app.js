@@ -31,6 +31,10 @@ app.use(
   })
 );
 
+app.get("/", (req, res) => {
+    res.send("Welcome to DriveCar");
+  });
+
 // Passport
 app.use(passport.initialize());
 app.use(passport.session());
