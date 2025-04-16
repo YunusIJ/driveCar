@@ -12,7 +12,7 @@ const dummyCars = Array.from({ length: 20 }, (_, i) => ({
 const seedCars = async () => {
   try {
     await connectPostgres();
-    await Car.sync({ force: false }); // Only sync if needed
+    await Car.sync({ force: false });
     await Car.bulkCreate(dummyCars);
     console.log(' 20 dummy cars inserted successfully.');
     process.exit(0);

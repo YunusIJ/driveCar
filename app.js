@@ -9,6 +9,8 @@ import morgan from 'morgan';
 import connectMongoDB from './src/config/db.js';
 import connectPostgres from './src/config/postgress.js';
 import './src/config/passport.setup.js';
+import userRoutes from './src/routes/user.route.js';
+
 
 import authRoutes from './src/routes/auth.route.js';
 import carRoutes from './src/routes/car.route.js';
@@ -40,9 +42,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
+app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
-//app.use('/api/payment', paymentRoutes);
 
 // Database connections
 await connectMongoDB();
