@@ -1,14 +1,21 @@
 import { DataTypes } from 'sequelize';
-import { sequelize } from '../config/postgress.js';
+import sequelize from '../config/postgress.js';
 
 const Car = sequelize.define('Car', {
+  brand: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   model: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  brand: {
-    type: DataTypes.STRING,
+  year: {
+    type: DataTypes.INTEGER,
     allowNull: false,
+  },
+  imageUrl: {
+    type: DataTypes.STRING,
   },
   pricePerDay: {
     type: DataTypes.FLOAT,
@@ -17,10 +24,7 @@ const Car = sequelize.define('Car', {
   available: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
-  },
-  imageUrl: {
-    type: DataTypes.STRING,
-  },
+  }
 });
 
 export default Car;

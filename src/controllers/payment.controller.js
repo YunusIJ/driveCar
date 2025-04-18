@@ -1,4 +1,3 @@
-// controllers/payment.controller.js
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import Car from '../models/car.model.js';
@@ -22,7 +21,7 @@ export const bookCarAndPay = async (req, res) => {
     const totalAmount = car.pricePerDay * daysBooked;
     const amountKobo = totalAmount * 100; // Paystack uses kobo
 
-    // Initialize Paystack Payment
+    
     const paymentInit = await axios.post(
       'https://api.paystack.co/transaction/initialize',
       {

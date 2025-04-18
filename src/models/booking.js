@@ -4,7 +4,7 @@ import Car from './Car.js';
 
 const Booking = sequelize.define('Booking', {
   userId: {
-    type: DataTypes.STRING, // Reference MongoDB User ID
+    type: DataTypes.STRING,
     allowNull: false,
   },
   carId: {

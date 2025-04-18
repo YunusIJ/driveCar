@@ -1,52 +1,27 @@
 import Car from '../models/car.model.js';
 
-//  Admin uploads a new car
-export const uploadCar = async (req, res) => {
+export const addCar = async (req, res) => {
   try {
-    const { model, brand, pricePerDay, imageUrl } = req.body;
+    const { brand, model, year, pricePerDay } = req.body;
 
-    if (!model || !brand || !pricePerDay) {
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!req.file) {
+      return res.status(400).json({ message: 'Image is required' });
     }
 
-    const newCar = await Car.create({
-      model,
+    const imageUrl = req.file.path; // Cloudinary image URL
+
+    const car = await Car.create({
       brand,
+      model,
+      year,
       pricePerDay,
       imageUrl,
       available: true,
     });
 
-    res.status(201).json({
-      message: 'Car added successfully',
-      car: newCar,
-    });
-  } catch (error) {
-    console.error('Upload Car Error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
-//  Public fetch 5 available cars with pagination
-export const getAvailableCars = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = 5;
-    const offset = (page - 1) * limit;
-
-    const cars = await Car.findAll({
-      where: { available: true },
-      limit,
-      offset,
-    });
-
-    res.status(200).json({
-      page,
-      results: cars.length,
-      cars,
-    });
-  } catch (error) {
-    console.error('Fetch Cars Error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    res.status(201).json({ message: 'Car added successfully', car });
+  } catch (err) {
+    console.error('Error uploading car:', err);
+    res.status(500).json({ message: 'Failed to upload car' });
   }
 };
