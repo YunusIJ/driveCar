@@ -55,7 +55,7 @@ app.use('/api/payments', paymentRoutes);
 
 // Database connections
 await connectMongoDB();
-await seedAdmin(); 
+await seedAdmin();  
 await sequelize.sync({ alter: true });
 
 

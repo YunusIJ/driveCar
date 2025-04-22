@@ -2,30 +2,48 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 
-export const generatePDFReceipt = (booking, user, car) => {
+const generatePDFReceipt = (booking, user, car) => {
   return new Promise((resolve, reject) => {
-    const receiptPath = path.join('receipts', `receipt-${booking.id}.pdf`);
-    const doc = new PDFDocument();
+    try {
+      const receiptDir = path.join('receipts');
+      if (!fs.existsSync(receiptDir)) {
+        fs.mkdirSync(receiptDir);
+      }
 
-    const stream = fs.createWriteStream(receiptPath);
-    doc.pipe(stream);
+      const fileName = `receipt-${booking.id}.pdf`;
+      const filePath = path.join(receiptDir, fileName);
 
-    doc.fontSize(20).text('DriveCar Booking Receipt', { align: 'center' }).moveDown();
-    doc.fontSize(14).text(`Booking ID: ${booking.id}`);
-    doc.text(`Name: ${user.firstName} ${user.lastName}`);
-    doc.text(`Email: ${user.email}`);
-    doc.text(`Car: ${car.brand} ${car.model} (${car.year})`);
-    doc.text(`Booking Date: ${booking.startDate} to ${booking.endDate}`);
-    doc.text(`Total Amount Paid: ₦${booking.totalAmount}`);
-    doc.text(`Payment Status: ${booking.paymentStatus === 'PAID' ? '✅ PAID' : '❌ PENDING'}`);
-    doc.text(`Payment Date: ${booking.updatedAt.toLocaleString()}`);
+      const doc = new PDFDocument();
+      const writeStream = fs.createWriteStream(filePath);
+      doc.pipe(writeStream);
 
-    doc.end();
+      const startDate = new Date(booking.startDate);
+      const endDate = new Date(booking.endDate);
+      const paymentDate = new Date();
 
-    stream.on('finish', () => resolve(receiptPath));
-    stream.on('error', reject);
+      doc.fontSize(20).text('🚗 DriveCar Booking Receipt', { align: 'center' });
+      doc.moveDown();
+
+      doc.fontSize(14).text(`Booking ID: ${booking.id}`);
+      doc.text(`Name: ${user?.firstName || 'N/A'} ${user?.lastName || ''}`);
+      doc.text(`Email: ${user?.email || 'N/A'}`);
+      doc.text(`Car: ${car.brand} ${car.model} (${car.year})`);
+      doc.text(`Booking Date: ${startDate.toDateString()} to ${endDate.toDateString()}`);
+      doc.text(`Total Amount Paid: ₦${booking.totalAmount}`);
+      doc.text(`Payment Status: ${booking.paymentStatus || 'UNKNOWN'}`);
+      doc.text(`Payment Date: ${paymentDate.toLocaleString()}`);
+
+      doc.end();
+
+      writeStream.on('finish', () => {
+        resolve(filePath);
+      });
+
+      writeStream.on('error', reject);
+    } catch (err) {
+      reject(err);
+    }
   });
 };
-
 
 export default generatePDFReceipt;

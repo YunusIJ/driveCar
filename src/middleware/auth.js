@@ -11,18 +11,9 @@ export const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // attaches user info to request
+    req.user = decoded; // ✅ attaches user data to req
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 };
-
-export const isAdmin = (req, res, next) => {
-    if (req.user && req.user.role === 'ADMIN') {
-      next();
-    } else {
-      return res.status(403).json({ message: 'Access denied. Admins only.' });
-    }
-  };
-  
