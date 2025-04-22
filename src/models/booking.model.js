@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { sequelize } from '../config/db.postgres.js';
-import Car from './Car.js';
+import sequelize from '../config/postgress.js';
 
 const Booking = sequelize.define('Booking', {
   userId: {
@@ -9,28 +8,34 @@ const Booking = sequelize.define('Booking', {
   },
   carId: {
     type: DataTypes.INTEGER,
-    references: {
-      model: Car,
-      key: 'id',
-    },
     allowNull: false,
   },
-  daysBooked: {
-    type: DataTypes.INTEGER,
+  startDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: false,
+  },
+  endDate: {
+    type: DataTypes.DATEONLY,
     allowNull: false,
   },
   totalAmount: {
     type: DataTypes.FLOAT,
     allowNull: false,
   },
-  paymentReference: {
-    type: DataTypes.STRING,
-  },
   status: {
     type: DataTypes.STRING,
-    enum: ['PENDING', 'PAID'],
-    defaultValue: 'PENDING',
+    defaultValue: 'pending',
   },
+  receiptUrl: {
+    type: DataTypes.STRING,
+    
+    paymentStatus: {
+      type: DataTypes.STRING,
+      defaultValue: 'PENDING', // gets updated to 'PAID' on successful webhook
+    },
+    
+  }
 });
+
 
 export default Booking;

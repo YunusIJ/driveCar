@@ -13,6 +13,8 @@ import { connectPostgres } from './src/config/postgress.js';
 import './src/config/passport.setup.js';
 import userRoutes from './src/routes/user.route.js';
 import adminRoute from './src/routes/admin.route.js';
+import paymentRoutes from './src/routes/payment.route.js';
+
 
 
 import authRoutes from './src/routes/auth.route.js';
@@ -49,6 +51,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/admin', adminRoute);
+app.use('/api/payments', paymentRoutes);
 
 // Database connections
 await connectMongoDB();
