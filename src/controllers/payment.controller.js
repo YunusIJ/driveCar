@@ -8,7 +8,6 @@ import path from 'path';
 
 export const initiateBooking = async (req, res) => {
   try {
-    // Add validation for authenticated user
     if (!req.user) {
       return res.status(401).json({
         message: "Authentication required"
@@ -17,18 +16,15 @@ export const initiateBooking = async (req, res) => {
 
     const { carId, startDate, endDate } = req.body;
 
-    // Validate required fields
     if (!carId || !startDate || !endDate) {
       return res.status(400).json({
         message: "Missing required fields: carId, startDate, endDate"
       });
     }
 
-    // Get authenticated user
     const userId = req.user.id;
     const userEmail = req.user.email;
 
-    // Check car exists and is available
     const car = await Car.findByPk(carId);
     if (!car) {
       return res.status(404).json({ message: "Car not found" });
@@ -38,28 +34,25 @@ export const initiateBooking = async (req, res) => {
       return res.status(400).json({ message: "Car is not available" });
     }
 
-    // Calculate booking details
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
     const totalAmount = days * car.pricePerDay;
 
-    // Create booking
     const newBooking = await Booking.create({
       userId,
       carId,
       startDate,
       endDate,
       totalAmount,
-      paymentStatus: 'PENDING'
+      status: 'PENDING'
     });
 
-    // Initialize Paystack payment
     const paystackResponse = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
         email: userEmail,
-        amount: totalAmount * 100, // convert to kobo
+        amount: totalAmount * 100,
         metadata: {
           bookingId: newBooking.id,
           userId,
@@ -91,58 +84,128 @@ export const initiateBooking = async (req, res) => {
   }
 };
 
-// ✅ handlePaystackWebhook function
 export const handlePaystackWebhook = async (req, res) => {
-  const event = req.body;
+  try {
+    const event = req.body;
+    console.log('Webhook received:', event.event);
 
-  if (event.event === 'charge.success') {
-    const metadata = event.data.metadata;
+    if (event.event === 'charge.success') {
+      const { data } = event;
+      const metadata = data.metadata;
+      console.log('Payment metadata:', metadata);
 
-    try {
-      const bookingId = metadata.bookingId;
+      if (!metadata.bookingId) {
+        console.error('No bookingId in metadata');
+        return res.status(400).json({ message: 'Missing bookingId' });
+      }
 
-      const booking = await Booking.findByPk(bookingId); // ✅ Sequelize method
+      const booking = await Booking.findByPk(metadata.bookingId);
+      
+      if (!booking) {
+        console.error(`Booking not found: ${metadata.bookingId}`);
+        return res.status(404).json({ message: 'Booking not found' });
+      }
 
-      if (!booking) return res.status(404).json({ message: 'Booking not found' });
+      const [updatedRows] = await Booking.update(
+        {
+          status: 'PAID',
+          paymentReference: data.reference,
+          updatedAt: new Date()
+        },
+        {
+          where: { id: metadata.bookingId },
+          returning: true
+        }
+      );
 
-      // ✅ Update and save
-      booking.paymentStatus = 'PAID';
-      await booking.save();
+      console.log('Updated rows:', updatedRows);
 
-      console.log(`✅ Booking ${bookingId} marked as PAID`);
-      return res.status(200).send('Webhook processed');
-    } catch (err) {
-      console.error('Webhook error:', err.message);
-      return res.status(500).json({ message: 'Error processing webhook' });
+      const verifyBooking = await Booking.findByPk(metadata.bookingId);
+      console.log('Verified booking status:', verifyBooking.status);
+
+      await Car.update(
+        { available: false },
+        { where: { id: booking.carId } }
+      );
+
+      console.log(`Booking ${metadata.bookingId} marked as PAID`);
+      return res.status(200).json({ 
+        message: 'Webhook processed successfully',
+        bookingStatus: verifyBooking.status 
+      });
     }
+
+    console.log('Unhandled event type:', event.event);
+    return res.status(200).json({ message: 'Unhandled event type' });
+
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    console.error('Error details:', error.stack);
+    return res.status(500).json({ 
+      message: 'Error processing webhook',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
   }
-
-  return res.status(400).json({ message: 'Event type not handled' });
 };
-
 
 export const downloadReceipt = async (req, res) => {
   try {
     const bookingId = req.params.bookingId;
 
-    // Fetch booking, user, car from DB (replace with your actual DB queries)
-    const booking = await Booking.findByPk(bookingId);
-    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    const booking = await Booking.findByPk(bookingId, {
+      include: [
+        {
+          model: Car,
+          as: 'car',
+          attributes: ['brand', 'model', 'year', 'pricePerDay']
+        }
+      ]
+    });
 
-    const user = await User.findById(booking.userId); // or however you fetch user
-    const car = await Car.findByPk(booking.carId);
-    
-    // ✅ Await the file path
-    const filePath = await generatePDFReceipt(booking, user, car);
-    
-    // ✅ Stream PDF
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    if (booking.status !== 'PAID') {
+      return res.status(400).json({
+        message: 'Receipt not available - payment pending',
+        status: booking.status
+      });
+    }
+
+    const user = await User.findById(booking.userId);
+
+    const receiptData = {
+      ...booking.toJSON(),
+      user,
+      car: booking.car,
+      paymentStatus: booking.status
+    };
+
+    const filePath = await generatePDFReceipt(receiptData);
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="receipt-${bookingId}.pdf"`);
-    
+
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
+
+    stream.on('end', () => {
+      fs.unlink(filePath, (err) => {
+        if (err) console.error('Error removing receipt:', err);
+      });
+    });
+
+    stream.on('error', (err) => {
+      console.error("PDF stream error:", err);
+      res.status(500).json({ message: 'Error sending PDF file' });
+    });
+
   } catch (error) {
     console.error('Receipt Error:', error);
-    res.status(500).json({ message: 'Failed to download receipt' });
+    res.status(500).json({
+      message: 'Failed to download receipt',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };

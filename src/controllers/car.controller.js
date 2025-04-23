@@ -8,7 +8,7 @@ export const addCar = async (req, res) => {
       return res.status(400).json({ message: 'Image is required' });
     }
 
-    const imageUrl = req.file.path; // Cloudinary image URL
+    const imageUrl = req.file.path; 
 
     const car = await Car.create({
       brand,

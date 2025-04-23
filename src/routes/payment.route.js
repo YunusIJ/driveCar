@@ -4,17 +4,17 @@ import {
   handlePaystackWebhook,
   downloadReceipt,
 } from '../controllers/payment.controller.js';
-import { verifyToken } from '../middleware/auth.js';
+import { authenticateJWT } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// 📌 Route to initiate a car booking and payment
-router.post('/book', verifyToken, initiateBooking);
+// Route to initiate a car booking and payment
+router.post('/book', authenticateJWT, initiateBooking);
 
-// 📌 Route to handle Paystack webhook (no auth)
-router.post('/webhook', express.json({ type: '*/*' }), handlePaystackWebhook);
+// Route to handle Paystack webhook 
+router.post('/webhook', express.json(), handlePaystackWebhook);
 
-// 📌 Route to download receipt (optional: protect if needed)
-router.get('/receipt/:bookingId', downloadReceipt);
+// Route to download receipt 
+router.get('/receipt/:bookingId', authenticateJWT, downloadReceipt);
 
 export default router;

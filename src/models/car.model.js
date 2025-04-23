@@ -27,4 +27,6 @@ const Car = sequelize.define('Car', {
   }
 });
 
+
+
 export default Car;

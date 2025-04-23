@@ -2,11 +2,10 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    userName: {
-      type: String,
-      required: [true, "Username is required"],
-      unique: true,
-      trim: true,
+   userName: {
+  type: String,
+  required: false, 
+  unique: true,
     },
     email: {
       type: String,
@@ -39,6 +38,8 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+
 
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);

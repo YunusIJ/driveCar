@@ -1,48 +1,40 @@
+// src/utils/pdfGenerator.js
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 
+// Ensure the receipts folder exists
+const RECEIPT_DIR = path.resolve('receipts');
+if (!fs.existsSync(RECEIPT_DIR)) {
+  fs.mkdirSync(RECEIPT_DIR);
+}
+
 const generatePDFReceipt = (booking, user, car) => {
   return new Promise((resolve, reject) => {
-    try {
-      const receiptDir = path.join('receipts');
-      if (!fs.existsSync(receiptDir)) {
-        fs.mkdirSync(receiptDir);
-      }
+    const receiptName = `receipt-${booking.id}.pdf`;
+    const filePath = path.join(RECEIPT_DIR, receiptName);
 
-      const fileName = `receipt-${booking.id}.pdf`;
-      const filePath = path.join(receiptDir, fileName);
+    const doc = new PDFDocument();
+    const stream = fs.createWriteStream(filePath);
 
-      const doc = new PDFDocument();
-      const writeStream = fs.createWriteStream(filePath);
-      doc.pipe(writeStream);
+    doc.pipe(stream);
 
-      const startDate = new Date(booking.startDate);
-      const endDate = new Date(booking.endDate);
-      const paymentDate = new Date();
+    doc.fontSize(20).text('🚗 DriveCar Booking Receipt', { align: 'center' });
+    doc.moveDown();
 
-      doc.fontSize(20).text('🚗 DriveCar Booking Receipt', { align: 'center' });
-      doc.moveDown();
+    doc.fontSize(12).text(`Booking ID: ${booking.id}`);
+    doc.text(`Name: ${user?.firstName || 'N/A'} ${user?.lastName || 'N/A'}`);
+    doc.text(`Email: ${user?.email || 'N/A'}`);
+    doc.text(`Car: ${car?.brand || 'N/A'} ${car?.model || ''} (${car?.year || ''})`);
+    doc.text(`Booking Date: ${new Date(booking.startDate).toDateString()} to ${new Date(booking.endDate).toDateString()}`);
+    doc.text(`Total Amount Paid: ₦${booking.totalAmount}`);
+    doc.text(`Payment Status: ${booking.paymentStatus}`);
+    doc.text(`Payment Date: ${new Date().toLocaleString()}`);
 
-      doc.fontSize(14).text(`Booking ID: ${booking.id}`);
-      doc.text(`Name: ${user?.firstName || 'N/A'} ${user?.lastName || ''}`);
-      doc.text(`Email: ${user?.email || 'N/A'}`);
-      doc.text(`Car: ${car.brand} ${car.model} (${car.year})`);
-      doc.text(`Booking Date: ${startDate.toDateString()} to ${endDate.toDateString()}`);
-      doc.text(`Total Amount Paid: ₦${booking.totalAmount}`);
-      doc.text(`Payment Status: ${booking.paymentStatus || 'UNKNOWN'}`);
-      doc.text(`Payment Date: ${paymentDate.toLocaleString()}`);
+    doc.end();
 
-      doc.end();
-
-      writeStream.on('finish', () => {
-        resolve(filePath);
-      });
-
-      writeStream.on('error', reject);
-    } catch (err) {
-      reject(err);
-    }
+    stream.on('finish', () => resolve(filePath));
+    stream.on('error', reject);
   });
 };
 
