@@ -18,9 +18,21 @@ import carRoutes from './src/routes/car.route.js';
 dotenv.config();
 const app = express(); 
 
+const PRODUCTION_URL = 'https://drivecar-api.onrender.com';
+const DEVELOPMENT_URL = 'http://localhost:5070';
+
+// Set base URL based on environment
+const BASE_URL = process.env.NODE_ENV === 'production' ? PRODUCTION_URL : DEVELOPMENT_URL;
+process.env.BASE_URL = BASE_URL;
+
+app.use(cors({
+  origin: [DEVELOPMENT_URL, PRODUCTION_URL],
+  credentials: true 
+}));
+
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan('dev')); 
 
 app.use(
   session({
