@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node app.js",
     "dev": "nodemon app.js",
-    "start": "node app.js"
+    "tunnel": "ngrok http 5070"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +32,7 @@
     "path": "^0.12.7",
     "pdfkit": "^0.17.0",
     "pg": "^8.14.1",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "streamifier": "^0.1.1"
   }
 }

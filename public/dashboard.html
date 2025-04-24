@@ -1,0 +1,225 @@
+d.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriveCar - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="styles/main.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard.html">
+                <h2>🚗 DriveCar</h2>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard.html">Cars</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/bookings.html">My Bookings</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span id="userEmail" class="me-3"></span>
+                    <button onclick="logout()" class="btn btn-outline-primary">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row mb-4">
+            <div class="col">
+                <h2>Available Cars</h2>
+            </div>
+            <div class="col-auto">
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search cars...">
+                    <button class="btn btn-outline-secondary" type="button" onclick="filterCars()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" id="carsGrid">
+            <!-- Cars will be loaded here -->
+        </div>
+
+        <div class="text-center mt-4">
+            <button id="loadMoreBtn" class="btn btn-outline-primary" onclick="loadMoreCars()">
+                Load More
+            </button>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Book a Car</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="bookingForm">
+                        <input type="hidden" id="carId">
+                        <div class="mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <p>Total Amount: <span id="totalAmount">₦0</span></p>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmBooking()">Book Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPage = 1;
+        let selectedCar = null;
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+            }
+            return token;
+        }
+
+        async function loadProfile() {
+            const token = checkAuth();
+            try {
+                const response = await fetch('/api/users/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                document.getElementById('userEmail').textContent = data.user.email;
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        async function loadCars() {
+            try {
+                const response = await fetch(`/api/cars/available?page=${currentPage}`);
+                const data = await response.json();
+                
+                const carsHTML = data.cars.map(car => `
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <img src="${car.mainImageUrl || car.imageUrls[0]}" 
+                                 class="card-img-top" 
+                                 alt="${car.brand} ${car.model}"
+                                 style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">${car.brand} ${car.model}</h5>
+                                <p class="card-text">
+                                    <small class="text-muted">Year: ${car.year}</small>
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price">₦${car.pricePerDay.toLocaleString()}/day</span>
+                                    <button onclick="openBookingModal(${JSON.stringify(car)})" 
+                                            class="btn btn-primary">
+                                        Book Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('carsGrid').innerHTML = currentPage === 1 
+                    ? carsHTML 
+                    : document.getElementById('carsGrid').innerHTML + carsHTML;
+
+                document.getElementById('loadMoreBtn').style.display = 
+                    currentPage >= data.totalPages ? 'none' : 'block';
+            } catch (error) {
+                console.error('Error loading cars:', error);
+            }
+        }
+
+        function openBookingModal(car) {
+            selectedCar = car;
+            document.getElementById('carId').value = car.id;
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('totalAmount').textContent = '₦0';
+            new bootstrap.Modal(document.getElementById('bookingModal')).show();
+        }
+
+        async function confirmBooking() {
+            const token = checkAuth();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const carId = document.getElementById('carId').value;
+
+            try {
+                const response = await fetch('/api/payments/book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ carId, startDate, endDate })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    window.location.href = data.authorization_url;
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Booking error:', error);
+                alert('Failed to process booking. Please try again.');
+            }
+        }
+
+        function calculateTotal() {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            if (startDate && endDate && selectedCar) {
+                const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                const total = days * selectedCar.pricePerDay;
+                document.getElementById('totalAmount').textContent = `₦${total.toLocaleString()}`;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        }
+
+        // Event listeners
+        document.getElementById('startDate').addEventListener('change', calculateTotal);
+        document.getElementById('endDate').addEventListener('change', calculateTotal);
+
+        // Initial load
+        loadProfile();
+        loadCars();
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DriveCar Authentication</title>
+</head>
+<body>
+    <div id="message">Authenticating...</div>
+    <script>
+        // Get token from URL
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+
+        if (token) {
+            // Store token in localStorage
+            localStorage.setItem('driveCar_token', token);
+            
+            // Show success message
+            document.getElementById('message').textContent = 'Authentication successful!';
+            
+            // Redirect to dashboard or home page
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 1000);
+        } else {
+            document.getElementById('message').textContent = 'Authentication failed!';
+        }
+    </script>
+</body>
+</html>

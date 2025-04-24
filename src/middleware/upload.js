@@ -1,16 +1,31 @@
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import cloudinary from '../config/cloudinary.js';
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'drivecar/cars', 
-    allowed_formats: ['jpg', 'png', 'jpeg'],
-    transformation: [{ width: 800, height: 600, crop: 'limit' }],
-  },
+// Use memory storage instead of disk storage
+const storage = multer.memoryStorage();
+
+// Add logging to help debug file uploads
+const fileFilter = (req, file, cb) => {
+  console.log('Received file:', {
+    fieldname: file.fieldname,
+    originalname: file.originalname,
+    mimetype: file.mimetype
+  });
+
+  // Only accept image files
+  if (!file.mimetype.startsWith('image/')) {
+    return cb(new Error('Only image files are allowed'), false);
+  }
+  cb(null, true);
+};
+
+// Configure multer with our settings
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 4 // Maximum 4 files
+  }
 });
-
-const upload = multer({ storage });
 
 export default upload;
